@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Sign Up or Sign In</title>
+
+	<!-- Mobile Specific Metas -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<!-- Main Style Css -->
+	<link rel="stylesheet" type="text/css" href="bootstrap.css" />
+</head>
+
+<body>
+	<div id="container d-flex justify-content-center">
+
+		<div id="error-banner" class="error-banner-hidden">
+			<h1 id="error-message" style="text-align: center;"></h1>
+		</div>
+
+		<div class="card d-flex align-items-center">
+			<div class="card-header">
+				<h1>Chatter App</h1>
+			</div>
+			<div class="card-body">
+				<div class="card-title">
+					<div class="tab mb-3">
+						<ul class="nav nav-tabs justify-content-center">
+							<li class="nav-item">
+								<button class="btn nav-link active" id="In" onclick="tabSwap('sign-in')">Sign
+									In</button>
+							</li>
+							<li class="nav-item">
+								<button class="btn nav-link" id="Reg" onclick="tabSwap('sign-up')">Sign
+									Up</button>
+							</li>
+					</div>
+					<form action="/users/sign_up" class="form-detail" name="form" onsubmit="return validate();"
+						method="POST">
+						<div class="tabcontent" id="sign-up" style="display:none;">
+							<div class="row d-flex justify-content-center align-items-center">
+
+								<div class="col-sm">
+									<label for="Username" class="">Username</label><br>
+									<input required type="text" class="form-control" id="Username" name="Username"
+										placeholder="username">
+								</div>
+							</div>
+							<div class="row d-flex justify-content-center align-items-center">
+								<div class="col-sm">
+									<label for="Password" class="">Password</label><br>
+									<input type="password" class="form-control" id="Password" name="Password"
+										placeholder="password" minlength="8">
+								</div>
+								<div class="col-sm">
+									<label for="PasswordCon" class="">Password</label><br>
+									<input type="password" class="form-control" id="PasswordCon" name="PasswordCon"
+										placeholder="confirm password">
+								</div>
+							</div>
+
+							<div class="row d-flex justify-content-center align-items-center">
+								<div class="col-sm">
+									<label for="Email" class="">Email Address</label><br>
+									<input required type="text" class="form-control" id="Email" name="Email"
+										placeholder="Email Address">
+								</div>
+							</div>
+							<div class="row d-flex justify-content-center align-items-center">
+								<div class="col-sm-4 mt-2"> <button class="btn btn-primary" type="submit">Sign
+										Up</button>
+								</div>
+							</div>
+						</div>
+					</form>
+					<div class="tabcontent" id="sign-in" style="display:block;">
+						<form action="/users/sign_in" method="POST">
+
+							<div class="row d-flex justify-content-center align-items-center">
+								<div class="col-sm">
+									<label for="Login" class="">Username</label><br>
+									<input required type="text" class="form-control" id="LoginUsername" name="Username"
+										placeholder="username">
+
+									<label for="Password" class="">Password</label><br>
+									<input type="password" class="form-control" id="LoginPassword" name="Password"
+										placeholder="password" required>
+								</div>
+							</div>
+							<div class="row d-flex justify-content-center align-items-center">
+								<div class="col-sm-6 mt-2"> <button class="btn btn-primary" type="submit">Sign
+										In</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		function tabSwap(tab) {
+			currTab = document.getElementById(tab);
+			inButton = document.getElementById('In');
+			regButton = document.getElementById('Reg');
+
+			if (currTab.id === 'sign-in') {
+				currTab.style.display = 'block';
+				inButton.classList.add("active")
+				altTab = document.getElementById('sign-up')
+				regButton.classList.remove("active")
+				altTab.style.display = 'none';
+			}
+			if (currTab.id === 'sign-up') {
+				currTab.style.display = 'block';
+				regButton.classList.add("active")
+				altTab = document.getElementById('sign-in')
+				inButton.classList.remove("active")
+				altTab.style.display = 'none';
+			}
+		}
+	</script>
+	<script type="text/javascript">
+		// Form validation
+		function validate() {
+
+			function containsSpecialCharacters(str) {
+				let regex = /[ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
+				return regex.test(str);
+			}
+
+			function containsLowerAndUpper(str) {
+				let regex = /[A-Za-z]/g;
+				return regex.test(str);
+			}
+
+			// check that password has at least one upper case and one lower case letter
+			if (!containsLowerAndUpper(document.form.Password.value)) {
+				alert("Need at least 1 Upper and Lower-case Character")
+				document.form.Password.focus();
+				return false;
+			}
+
+			// check that password has at least 1 special character
+			if (!containsSpecialCharacters(document.form.Password.value)) {
+				alert("Need at least 1 special Character")
+				document.form.Password.focus();
+				return false;
+			}
+
+			// check that two passwords match
+			if (document.form.Password.value !== document.form.PasswordCon.value) {
+				alert("Passwords do not match.");
+				document.form.Password.focus();
+				return false;
+			}
+
+			// submit form if all conditions validate
+			return true;
+		}
+	</script>
+
+</body>
+
+</html>
