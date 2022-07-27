@@ -9,12 +9,6 @@ const spaceDomain = process.env.SPACE_URL;
 const username = process.env.PROJECT_ID;
 const password = process.env.API_KEY
 
-// Temp View 
-const view = (req, res) => {
-    res.sendFile('views/chRouteTest.html', { root: 'src' })
-}
-
-
 /*
 Convention:
 Each route has an exported function, and a helper function(prefaced with ch)
@@ -106,21 +100,23 @@ function chPopUser(channelID, Username) {
 
 // Create a new channel and add it to the User's channel Array
 const newChannel = async (req, res) => {
-    const { Username, channelID } = req.body;
-    success = await chNewChannel(channelID, Username)
+    const { ChannelID } = req.body;
+    const User = req.user
+    const Username = User.Username
+    success = await chNewChannel(ChannelID, Username)
     if (success) {
-        await userUpdateToken(lookUp.Username)
+        await userUpdateToken(User)
         res.sendStatus(200)
     }
     else res.sendStatus(404)
 }
 
 // refs newChannel
-async function chNewChannel(channelID, Username) {
+async function chNewChannel(ChannelID, Username) {
     try {
-        await channel.create({ "ChannelID": channelID, "Users": [Username] })
+        await channel.create({ "ChannelID": ChannelID, "Users": [Username] })
         const User = await user.findOne({ "Username": Username })
-        User.Channels.push(channelID)
+        User.Channels.push(ChannelID)
         User.save()
         return (true)
     }
@@ -147,9 +143,11 @@ const updateToken = async (req, res) => {
 // refs updateToken
 async function userUpdateToken(Username) {
     try {
+        let channelPerms = {}
         for (const channel in Username.Channels) {
-            channelPerms[channel] = { read: true, write: true }
+            channelPerms[Username.Channels[channel]] = { read: true, write: true }
         }
+        console.log(channelPerms)
         const options = {
             method: 'POST',
             url: 'https://' + spaceDomain + '/api/chat/tokens',
@@ -181,5 +179,4 @@ module.exports = {
     popUser,
     newChannel,
     updateToken,
-    view
 };

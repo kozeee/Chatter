@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>
+        <%=user.Username%>
+    </title>
+
+    <!-- Mobile Specific Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!-- Main Style Css -->
+    <base href="/">
+    <link rel="stylesheet" href="bootstrap.css" />
+</head>
+
+<body>
+    <div id="container d-flex justify-content-center">
+
+        <div id="error-banner" class="error-banner-hidden">
+            <h1 id="error-message" style="text-align: center;"></h1>
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid just">
+                    <a class="navbar-brand" href="#"></a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                        <div class="navbar-nav">
+                            <a class="nav-link">Home</a>
+                            <a class="nav-link" href="/users/sign_out">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="card d-flex justify-content-center">
+            <div class="card-head text-center">
+                <h1>Welcome, <%=user.Username%>
+                </h1>
+            </div>
+            <div class="card-body">
+                <div class="col-sm-2">
+                    <div class="form-control">
+                        <form action="/channel/new" method="POST">
+                            <input class="input-group" required placeholder="Channel Name" type="text" id="ChannelID"
+                                name="ChannelID"><br>
+                            <button class="input-group btn btn-primary mt-2">Create New Channel</button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</body>
+
+</html>
