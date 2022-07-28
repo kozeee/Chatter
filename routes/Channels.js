@@ -9,5 +9,6 @@ router.post('/add', controller.addUser)
 router.post('/pop', controller.popUser)
 router.post('/new', controller.newChannel)
 router.post('/update_token', controller.updateToken)
+router.get('/:id', isAuth, controller.viewChannel)
 
 module.exports = router

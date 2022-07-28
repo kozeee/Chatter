@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/users/home')
   }
-  res.render('index')
+  else res.render('index')
 
 })
 

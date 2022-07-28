@@ -6,6 +6,7 @@ const controller = require("../controllers/UserController");
 const isAuth = require('./auth').isAuth;
 
 router.get('/', isAuth, controller.view)
+router.get('/token', isAuth, controller.token)
 router.get('/home', isAuth, controller.home)
 router.post('/sign_up', controller.signUp)
 router.post('/sign_in', passport.authenticate('local', { failureRedirect: '/', successRedirect: '/users/home' }))

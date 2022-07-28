@@ -24,7 +24,7 @@ const home = (req, res) => {
 
 const signUp = async (req, res) => {
     try {
-        token = await createToken(req.body.Username)
+        let token = await createToken(req.body.Username)
 
         bcrypt.hash(req.body.Password, 10, function async(err, hash) {
             user.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
@@ -33,7 +33,7 @@ const signUp = async (req, res) => {
         channel.Users.push(req.body.Username)
         channel.save()
 
-        res.send("Success")
+        res.redirect("/")
     }
     catch (e) {
         console.log(e)
@@ -58,6 +58,13 @@ const lookup = async (req, res) => {
     }
 }
 
+const token = async (req, res) => {
+    const User = req.user
+    res.setHeader('Content-Type', 'application/json')
+    let token = User.Token
+    res.send(JSON.stringify({ token }))
+}
+
 //Creates a fresh user token 
 async function createToken(Username) {
     const options = {
@@ -75,11 +82,13 @@ async function createToken(Username) {
     return response.data.token
 }
 
+
 //export functions to User route
 module.exports = {
     signUp,
     signIn,
     view,
     lookup,
-    home
+    home,
+    token
 };

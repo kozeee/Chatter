@@ -12,7 +12,7 @@ const password = process.env.API_KEY
 /*
 Convention:
 Each route has an exported function, and a helper function(prefaced with ch)
-exported functions pass db objects to helper functions and return status codes
+exported functions pass db objects to helper functions and redirect or return a status
 helper functions actually influence db and return true or false
 */
 
@@ -104,9 +104,9 @@ const newChannel = async (req, res) => {
     const User = req.user
     const Username = User.Username
     success = await chNewChannel(ChannelID, Username)
+    await userUpdateToken(User)
     if (success) {
-        await userUpdateToken(User)
-        res.sendStatus(200)
+        res.redirect('/users/home')
     }
     else res.sendStatus(404)
 }
@@ -117,7 +117,7 @@ async function chNewChannel(ChannelID, Username) {
         await channel.create({ "ChannelID": ChannelID, "Users": [Username] })
         const User = await user.findOne({ "Username": Username })
         User.Channels.push(ChannelID)
-        User.save()
+        await User.save()
         return (true)
     }
     catch (e) {
@@ -147,7 +147,7 @@ async function userUpdateToken(Username) {
         for (const channel in Username.Channels) {
             channelPerms[Username.Channels[channel]] = { read: true, write: true }
         }
-        console.log(channelPerms)
+        console.log(Username.Channels)
         const options = {
             method: 'POST',
             url: 'https://' + spaceDomain + '/api/chat/tokens',
@@ -172,6 +172,26 @@ async function userUpdateToken(Username) {
     }
 }
 
+const viewChannel = async (req, res) => {
+    const ChannelID = req.params.id;
+    const UserList = await channel.findOne({ ChannelID: ChannelID })
+    const User = req.user
+    success = await chViewChannel(ChannelID, User)
+    if (success) {
+        res.render('chat', { ChannelID: ChannelID, User: User, UserList: UserList })
+    }
+    else res.sendStatus(404)
+
+}
+
+async function chViewChannel(ChannelID, User) {
+    const ch = await channel.findOne({ 'ChannelID': ChannelID })
+    if (ch === null) return false
+    if (!ch.Users.includes(User.Username)) return false
+
+    return true
+}
+
 // export to channels route
 module.exports = {
     listUsers,
@@ -179,4 +199,5 @@ module.exports = {
     popUser,
     newChannel,
     updateToken,
+    viewChannel
 };
