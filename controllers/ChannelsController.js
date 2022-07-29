@@ -9,16 +9,10 @@ const spaceDomain = process.env.SPACE_URL;
 const username = process.env.PROJECT_ID;
 const password = process.env.API_KEY
 
-// Temp View 
-const view = (req, res) => {
-    res.sendFile('views/chRouteTest.html', { root: 'src' })
-}
-
-
 /*
 Convention:
 Each route has an exported function, and a helper function(prefaced with ch)
-exported functions pass db objects to helper functions and return status codes
+exported functions pass db objects to helper functions and redirect or return a status
 helper functions actually influence db and return true or false
 */
 
@@ -106,22 +100,24 @@ function chPopUser(channelID, Username) {
 
 // Create a new channel and add it to the User's channel Array
 const newChannel = async (req, res) => {
-    const { Username, channelID } = req.body;
-    success = await chNewChannel(channelID, Username)
+    const { ChannelID } = req.body;
+    const User = req.user
+    const Username = User.Username
+    success = await chNewChannel(ChannelID, Username)
+    await userUpdateToken(Username)
     if (success) {
-        await userUpdateToken(lookUp.Username)
-        res.sendStatus(200)
+        res.redirect('/users/home')
     }
     else res.sendStatus(404)
 }
 
 // refs newChannel
-async function chNewChannel(channelID, Username) {
+async function chNewChannel(ChannelID, Username) {
     try {
-        await channel.create({ "ChannelID": channelID, "Users": [Username] })
+        await channel.create({ "ChannelID": ChannelID, "Users": [Username] })
         const User = await user.findOne({ "Username": Username })
-        User.Channels.push(channelID)
-        User.save()
+        User.Channels.push(ChannelID)
+        await User.save()
         return (true)
     }
     catch (e) {
@@ -145,10 +141,12 @@ const updateToken = async (req, res) => {
 }
 
 // refs updateToken
-async function userUpdateToken(Username) {
+async function userUpdateToken(User) {
     try {
+        let Username = await user.findOne({ Username: User })
+        let channelPerms = {}
         for (const channel in Username.Channels) {
-            channelPerms[channel] = { read: true, write: true }
+            channelPerms[Username.Channels[channel]] = { read: true, write: true }
         }
         const options = {
             method: 'POST',
@@ -174,6 +172,42 @@ async function userUpdateToken(Username) {
     }
 }
 
+const viewChannel = async (req, res) => {
+    const ChannelID = req.params.id;
+    const UserList = await channel.findOne({ ChannelID: ChannelID })
+    const User = req.user
+    success = await chViewChannel(ChannelID, User)
+    if (success) {
+        res.render('chat', { ChannelID: ChannelID, User: User, UserList: UserList })
+    }
+    else res.sendStatus(404)
+
+}
+
+async function chViewChannel(ChannelID, User) {
+    const ch = await channel.findOne({ 'ChannelID': ChannelID })
+    if (ch === null) return false
+    if (!ch.Users.includes(User.Username)) return false
+
+    return true
+}
+
+const videoToken = async (req, res) => {
+    auth = { username: username, password: password }
+    let user_name = req.user.Username
+    const roomname = req.body.roomname
+    let token = await axios.post(
+        "https://" + spaceDomain + "/api/video/room_tokens",
+        {
+            user_name: user_name,
+            room_name: roomname,
+        },
+
+        { auth }
+    );
+    return res.json({ token: token.data.token });
+}
+
 // export to channels route
 module.exports = {
     listUsers,
@@ -181,5 +215,6 @@ module.exports = {
     popUser,
     newChannel,
     updateToken,
-    view
+    videoToken,
+    viewChannel,
 };

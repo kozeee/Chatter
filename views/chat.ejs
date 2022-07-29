@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>
+        <%=ChannelID%>
+    </title>
+
+    <!-- Mobile Specific Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!-- Main Style Css -->
+    <base href="/">
+    <link rel="stylesheet" href="bootstrap_vapor.css" />
+    <script src="https://unpkg.com/@signalwire/js@3.13.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+    <div id="container d-flex justify-content-center">
+        <nav class="navbar navbar-expand-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#"></a>
+                <div class="navbar" id="navbarNavAltMarkup">
+                    <div class="navbar-nav">
+                        <a class="nav-link" style="color:white;" href="/users/home">Home</a>
+                        <a class="nav-link" style="color:white;" href="/users/sign_out">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="row">
+            <!--CHAT ROOT-->
+            <div class="card col-md-10 d-flex">
+                <div class="card-header">
+                    <h1 id="channelID">
+                        <%=ChannelID%>
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div id="chat" class="overflow-auto" style="height:250px;width: 100%;">
+                        <div id="messages-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--CHAT ROOT END-->
+
+            <!--MEMBERLIST-->
+            <div class="card d-flex align-items-center col-sm">
+                <div class="card-header">
+                    <h1 id="memberList">
+                        Member List
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div id="chat-list overflow-auto">
+                        <div id="member-list">
+                            <ul>
+                                <div class="memberlist">
+                                    <% UserList.Users.forEach (username=>{ %>
+                                        <div class="dropend">
+                                            <a class="dropdown-toggle drp" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                                <%=username%>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="/users/<%=username%>">Profile</a>
+                                                </li>
+                                            </ul>
+                                            <% }) %>
+                                        </div>
+                                </div>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--MEMBERLIST END-->
+
+
+        </div>
+        <div class="row">
+            <!--Message Send-->
+            <div class="card  col-md d-flex justify-content-left text-center">
+                <div class="card-body d-flex justify-content-left">
+                    <div id="message-editor" class="col-md-6">
+                        <textarea id="message-send" class="form-control mb-2" placeholder="Send message..."></textarea>
+                        <button id="SendBtn" class="btn btn-primary form-control">Send</button>
+                    </div>
+                </div>
+                <!--Message End-->
+            </div>
+            <div id="audioDrop" class="col-md-2">
+                <div id="root" class="d-none"></div>
+                <div class="mt-2">
+                    <button id="audioJoin" class="btn btn-info" onclick="dropAudio()" style="display:block">Join Audio
+                        Channel</button>
+                    <button id="audioLeave" class="btn btn-info" onclick="audioLeave()" style="display:none">Leave Audio
+                        Channel</button>
+                </div>
+                <div class="mt-2">
+                    <button id="selfMute" class="btn btn-primary" onclick="micHandler(true)" style="display:none">Mute
+                        Self</button>
+                    <button id="selfUnMute" class="btn btn-danger" onclick="micHandler(false)"
+                        style="display:none">Un-Mute
+                        Self</button>
+
+                    <p id="audioLoading" style="display:none">Joining audio session..</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+
+
+
+    </div>
+
+</body>
+
+</html>
+
+<script>
+    Chat()
+    let room;
+    async function Chat() {
+        const SendBtn = document.getElementById("SendBtn")
+        SendBtn.addEventListener("click", () => sendMessage())
+        const ChannelID = document.getElementById('channelID').innerText
+
+        let response = await fetch('/users/token')
+        let token = await response.json()
+
+        const chatClient = new SignalWire.Chat.Client({
+            token: token.token
+        });
+
+        async function sendMessage() {
+            const message = document.getElementById('message-send').value;
+
+            await chatClient.publish({
+                channel: ChannelID,
+                content: message
+            });
+
+            message.value = "";
+        }
+
+        async function displayMessage(message, channel) {
+            const messageListEl = document.getElementById('messages-list')
+            const messageEl = document.createElement("div");
+            messageEl.classList.add("message");
+            messageEl.innerHTML = `
+      <div class="message-meta"></div>
+      <div class="message-body"></div>
+    `;
+            // ${message.publishedAt.toLocaleString()}) <- add date time to message metadata if needed
+            messageEl.querySelector(".message-meta").innerHTML = `<div class="dropend">
+                <a class="dropdown-toggle drp" data-bs-toggle="dropdown" aria-expanded="false">${message.member.id}</a>
+                <ul class="dropdown-menu">
+                   <li><a class="dropdown-item" href="/">${message.member.id}</li>
+                    </ul>
+                </div>` ;
+            messageEl.querySelector(".message-body").innerText = message.content;
+            messageListEl.append(messageEl);
+
+            // Scroll to bottom
+            messageEl.scrollIntoView(false);
+        }
+
+        chatClient.on("message", (message) => {
+            displayMessage(message, message.channel);
+        });
+
+        async function downloadExistingMessages(channel) {
+            console.log('download msg')
+            const messages = await chatClient.getMessages({
+                channel: channel
+            });
+
+            if (!messages?.messages) return;
+
+            for (const msg of messages.messages.reverse()) {
+                displayMessage(msg, channel);
+            }
+        }
+
+        try {
+            downloadExistingMessages(ChannelID)
+            await chatClient.subscribe(ChannelID)  // channels is an array such as ['office', 'test']
+        } catch (error) {
+            console.error('Error', error)
+        }
+    }
+
+    async function dropAudio() {
+        try {
+            const roomname = document.getElementById('channelID').innerText
+            let tokens = await axios.post("/channel/videoToken", {
+                roomname: roomname
+            })
+            let token = tokens.data.token
+            room = new SignalWire.Video.RoomSession({
+                token,
+                rootElement: document.getElementById("root"),
+                audio: true,
+                video: false
+            });
+            document.getElementById('audioJoin').style.display = "none"
+            document.getElementById('audioLoading').style.display = "block"
+            await room.join()
+            document.getElementById('audioLoading').style.display = "none"
+            document.getElementById('audioLeave').style.display = "block"
+            document.getElementById('selfMute').style.display = "block"
+        }
+        catch (e) {
+            console.log(e)
+        }
+    }
+    async function audioLeave() {
+        await room.hangup()
+        document.getElementById('audioLeave').style.display = "none"
+        document.getElementById('audioJoin').style.display = "block"
+        document.getElementById('selfMute').style.display = "none"
+        document.getElementById('selfUnMute').style.display = "none"
+    }
+
+    async function micHandler(toggle) {
+        if (toggle) { await room.audioMute(); document.getElementById('selfMute').style.display = "none"; document.getElementById('selfUnMute').style.display = "block" }
+        if (!toggle) { await room.audioUnmute(); document.getElementById('selfMute').style.display = "block"; document.getElementById('selfUnMute').style.display = "none" }
+
+    }
+</script>
