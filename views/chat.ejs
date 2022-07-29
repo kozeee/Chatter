@@ -35,7 +35,7 @@
         </nav>
         <div class="row">
             <!--CHAT ROOT-->
-            <div class="card col-md-10 d-flex">
+            <div class="card col-md-9 d-flex">
                 <div class="card-header">
                     <h1 id="channelID">
                         <%=ChannelID%>
@@ -46,6 +46,14 @@
                         <div id="messages-list">
                         </div>
                     </div>
+                </div>
+                <div class="card-footer">
+                    <!--Message Send-->
+                    <div id="message-editor" class="col-md-9">
+                        <textarea id="message-send" class="form-control mb-2" placeholder="Send message..."></textarea>
+                        <button id="SendBtn" class="btn btn-primary form-control">Send</button>
+                    </div>
+                    <!--Message End-->
                 </div>
             </div>
             <!--CHAT ROOT END-->
@@ -79,42 +87,42 @@
                         </div>
                     </div>
                 </div>
+                <div class="card-footer">
+                    <!--Audio Drop-in-->
+                    <div id="audioDrop" class="">
+                        <div id="root" class="d-none"></div>
+                        <div class="mt-2">
+                            <button id="audioJoin" class="btn btn-info" onclick="dropAudio()" style="display:block">Join
+                                Audio
+                                Channel</button>
+                            <button id="audioLeave" class="btn btn-info" onclick="audioLeave()"
+                                style="display:none">Leave Audio
+                                Channel</button>
+                        </div>
+                        <div class="mt-2">
+                            <button id="selfMute" class="btn btn-primary" onclick="micHandler(true)"
+                                style="display:none">Mute
+                                Self</button>
+                            <button id="selfUnMute" class="btn btn-danger" onclick="micHandler(false)"
+                                style="display:none">Un-Mute
+                                Self</button>
+
+                            <p id="audioLoading" style="display:none">Joining audio session..</p>
+                        </div>
+                    </div>
+                    <!--Audio Drop-in end-->
+                </div>
             </div>
             <!--MEMBERLIST END-->
 
 
         </div>
         <div class="row">
-            <!--Message Send-->
-            <div class="card  col-md d-flex justify-content-left text-center">
-                <div class="card-body d-flex justify-content-left">
-                    <div id="message-editor" class="col-md-6">
-                        <textarea id="message-send" class="form-control mb-2" placeholder="Send message..."></textarea>
-                        <button id="SendBtn" class="btn btn-primary form-control">Send</button>
-                    </div>
-                </div>
-                <!--Message End-->
-            </div>
-            <div id="audioDrop" class="col-md-2">
-                <div id="root" class="d-none"></div>
-                <div class="mt-2">
-                    <button id="audioJoin" class="btn btn-info" onclick="dropAudio()" style="display:block">Join Audio
-                        Channel</button>
-                    <button id="audioLeave" class="btn btn-info" onclick="audioLeave()" style="display:none">Leave Audio
-                        Channel</button>
-                </div>
-                <div class="mt-2">
-                    <button id="selfMute" class="btn btn-primary" onclick="micHandler(true)" style="display:none">Mute
-                        Self</button>
-                    <button id="selfUnMute" class="btn btn-danger" onclick="micHandler(false)"
-                        style="display:none">Un-Mute
-                        Self</button>
-
-                    <p id="audioLoading" style="display:none">Joining audio session..</p>
-                </div>
-            </div>
 
         </div>
+
+
+    </div>
     </div>
 
 
@@ -220,6 +228,10 @@
             document.getElementById('audioLoading').style.display = "none"
             document.getElementById('audioLeave').style.display = "block"
             document.getElementById('selfMute').style.display = "block"
+
+            room.on('member.left', (member) => {
+                console.log(member.member.id)
+            })
         }
         catch (e) {
             console.log(e)

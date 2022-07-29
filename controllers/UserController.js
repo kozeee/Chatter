@@ -29,7 +29,6 @@ const signUp = async (req, res) => {
         bcrypt.hash(req.body.Password, 10, function async(err, hash) {
             user.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
         });
-        let channel = await ch.findOne({ ChannelID: "Welcome" })
         channel.Users.push(req.body.Username)
         channel.save()
 
