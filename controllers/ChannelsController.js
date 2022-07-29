@@ -104,7 +104,7 @@ const newChannel = async (req, res) => {
     const User = req.user
     const Username = User.Username
     success = await chNewChannel(ChannelID, Username)
-    await userUpdateToken(User)
+    await userUpdateToken(Username)
     if (success) {
         res.redirect('/users/home')
     }
@@ -141,13 +141,13 @@ const updateToken = async (req, res) => {
 }
 
 // refs updateToken
-async function userUpdateToken(Username) {
+async function userUpdateToken(User) {
     try {
+        let Username = await user.findOne({ Username: User })
         let channelPerms = {}
         for (const channel in Username.Channels) {
             channelPerms[Username.Channels[channel]] = { read: true, write: true }
         }
-        console.log(Username.Channels)
         const options = {
             method: 'POST',
             url: 'https://' + spaceDomain + '/api/chat/tokens',
@@ -192,6 +192,22 @@ async function chViewChannel(ChannelID, User) {
     return true
 }
 
+const videoToken = async (req, res) => {
+    auth = { username: username, password: password }
+    let user_name = req.user.Username
+    const roomname = req.body.roomname
+    let token = await axios.post(
+        "https://" + spaceDomain + "/api/video/room_tokens",
+        {
+            user_name: user_name,
+            room_name: roomname,
+        },
+
+        { auth }
+    );
+    return res.json({ token: token.data.token });
+}
+
 // export to channels route
 module.exports = {
     listUsers,
@@ -199,5 +215,6 @@ module.exports = {
     popUser,
     newChannel,
     updateToken,
-    viewChannel
+    videoToken,
+    viewChannel,
 };
