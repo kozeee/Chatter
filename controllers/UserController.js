@@ -25,15 +25,18 @@ const home = (req, res) => {
 const signUp = async (req, res) => {
     try {
         let token = await createToken(req.body.Username)
+        let channel = await ch.findOne({ ChannelID: 'Welcome' })
 
         bcrypt.hash(req.body.Password, 10, function async(err, hash) {
             user.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
+
         });
-        let channel = await ch.findOne({ ChannelID: "Welcome" })
+
         channel.Users.push(req.body.Username)
         channel.save()
 
         res.redirect("/")
+
     }
     catch (e) {
         console.log(e)

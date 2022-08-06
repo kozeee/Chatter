@@ -114,6 +114,8 @@ const newChannel = async (req, res) => {
 // refs newChannel
 async function chNewChannel(ChannelID, Username) {
     try {
+        ChannelID = ChannelID.replace(/\s/g, '')
+
         await channel.create({ "ChannelID": ChannelID, "Users": [Username] })
         const User = await user.findOne({ "Username": Username })
         User.Channels.push(ChannelID)
