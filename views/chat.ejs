@@ -238,7 +238,7 @@
         }
     }
     async function audioLeave() {
-        await room.hangup()
+        await room.leave()
         document.getElementById('audioLeave').style.display = "none"
         document.getElementById('audioJoin').style.display = "block"
         document.getElementById('selfMute').style.display = "none"
