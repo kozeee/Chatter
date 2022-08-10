@@ -1,40 +1,39 @@
 const axios = require('axios').default
 const mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost/Chatter')
-const channel = require('../models/Channels')
-const user = require('../models/Users')
+const channelDB = require('../models/Channels')
+const userDB = require('../models/Users')
 require("dotenv").config()
 
 const spaceDomain = process.env.SPACE_URL;
-const username = process.env.PROJECT_ID;
-const password = process.env.API_KEY
+auth = { username: process.env.PROJECT_ID, password: process.env.API_KEY }
+/* 
 
-/*
-Convention:
-Each route has an exported function, and a helper function(prefaced with ch)
-exported functions pass db objects to helper functions and redirect or return a status
-helper functions actually influence db and return true or false
+Users/Channels = array
+Username/channelID = string
+User/Channel = db object
+userDB/channelDB = database
+
 */
 
-
-//Returns a list of users assigned to a channel, exception to convention as it returns an array directly.
+//Returns a list of users assigned to a channel
 const listUsers = async (req, res) => {
     try {
-        const { Username, channelID } = req.body;
-        const users = await chListUsers(channelID)
-        if (users === null) return res.status(400)
-        res.sendStatus(200, users)
+        const { username, channelID } = req.body;
+        const Users = await chListUsers(channelID)
+        if (Users === null) return res.status(400)
+        res.sendStatus(200, Users)
     }
     catch (e) {
         console.log(e)
     }
 }
 
-// refs listUsers
+// Refs listUsers, takes string
 async function chListUsers(channelID) {
     try {
-        const userList = await channel.findOne({ "ChannelID": channelID })
-        return userList.Users
+        const Users = await channelDB.findOne({ "ChannelID": channelID })
+        return Users.Users
     }
     catch (e) {
         console.log(e)
@@ -46,29 +45,30 @@ async function chListUsers(channelID) {
 // Adds user to the User array in Channels, adds channel to channel array in Users
 const addUser = async (req, res) => {
     const { Username, channelID } = req.body;
+    console.log(req.body)
 
-    const ch = await channel.findOne({ 'ChannelID': channelID })
-    if (ch === null) res.sendStatus(404)
-    const lookUp = await user.findOne({ "Username": Username })
-    if (lookUp === null) res.sendStatus(404)
+    const Channel = await channelDB.findOne({ 'ChannelID': channelID })
+    if (Channel === null) return res.sendStatus(404)
+    const User = await userDB.findOne({ "Username": Username })
+    if (User === null) return res.sendStatus(404)
 
-    success = await chAddUser(ch, lookUp)
+    success = await chAddUser(Channel, User)
     if (success) {
-        await userUpdateToken(lookUp.Username)
-        res.sendStatus(200)
+        await userUpdateToken(User.Username)
+        return res.redirect('/channel/' + channelID)
     }
-    else res.sendStatus(404)
+    else return res.sendStatus(404)
 
 }
 
-// refs adduser
-async function chAddUser(channel, Username) {
+// Refs addUser, takes two objects
+async function chAddUser(Channel, User) {
     try {
-        if (!(channel.Users.includes(Username.Username)) && (!(Username.Channels.includes(channel.ChannelID)))) {
-            channel.Users.push(Username.Username)
-            Username.Channels.push(channel.ChannelID)
-            await channel.save()
-            await Username.save()
+        if (!(Channel.Users.includes(User.Username)) && (!(User.Channels.includes(Channel.ChannelID)))) {
+            Channel.Users.push(User.Username)
+            User.Channels.push(Channel.ChannelID)
+            await Channel.save()
+            await User.save()
             return (true)
         }
         return (false)
@@ -80,30 +80,46 @@ async function chAddUser(channel, Username) {
 
 
 // Removes a user from the User array in Channels, removes channel from Users channel array
-const popUser = (req, res) => {
+const popUser = async (req, res) => {
     const { Username, channelID } = req.body;
-
     success = chPopUser(channelID, Username)
     if (success) {
-        userPopChannel(channelID, Username)
-        userUpdateToken(Username)
+        await userUpdateToken(Username)
+        res.send(true)
     }
-
-    res.sendStatus(success)
+    else res.sendStatus(404)
 }
 
 // removes Username from channelID
-function chPopUser(channelID, Username) {
+async function chPopUser(channelID, Username) {
+    try {
+        const User = await userDB.findOne({ 'Username': Username })
+        const Channel = await channelDB.findOne({ 'ChannelID': channelID })
+        if (User === null || Channel === null) return false
+        let userI = Channel.Users.indexOf(Username)
+        let channelI = User.Channels.indexOf(channelID)
+        if (userI > 0 && channelI > 0) {
+            Channel.Users.splice(userI, 1)
+            User.Channels.splice(channelI, 1)
+            await User.save()
+            await Channel.save()
+            return true
+        }
+        else return false
 
+    }
+    catch (e) {
+        console.log(e)
+    }
 
 }
 
 // Create a new channel and add it to the User's channel Array
 const newChannel = async (req, res) => {
-    const { ChannelID } = req.body;
+    const channelID = req.body.ChannelID;
     const User = req.user
     const Username = User.Username
-    success = await chNewChannel(ChannelID, Username)
+    success = await chNewChannel(channelID, Username)
     await userUpdateToken(Username)
     if (success) {
         res.redirect('/users/home')
@@ -111,14 +127,14 @@ const newChannel = async (req, res) => {
     else res.sendStatus(404)
 }
 
-// refs newChannel
-async function chNewChannel(ChannelID, Username) {
+// refs newChannel, takes two strings
+async function chNewChannel(channelID, Username) {
     try {
-        ChannelID = ChannelID.replace(/\s/g, '')
+        channelID = channelID.replace(/\s/g, '')
 
-        await channel.create({ "ChannelID": ChannelID, "Users": [Username] })
-        const User = await user.findOne({ "Username": Username })
-        User.Channels.push(ChannelID)
+        await channelDB.create({ "ChannelID": channelID, "Users": [Username] })
+        const User = await userDB.findOne({ "Username": Username })
+        User.Channels.push(channelID)
         await User.save()
         return (true)
     }
@@ -132,8 +148,8 @@ async function chNewChannel(ChannelID, Username) {
 const updateToken = async (req, res) => {
     try {
         const { Username } = req.body;
-        const User = await user.findOne({ 'Username': Username })
-        token = await userUpdateToken(User)
+        const User = await userDB.findOne({ 'Username': Username })
+        token = await userUpdateToken(User.Username)
         return true
     }
     catch (e) {
@@ -142,30 +158,24 @@ const updateToken = async (req, res) => {
     }
 }
 
-// refs updateToken
-async function userUpdateToken(User) {
+// refs updateToken, takes one string
+async function userUpdateToken(Username) {
     try {
-        let Username = await user.findOne({ Username: User })
+        let User = await userDB.findOne({ Username: Username })
         let channelPerms = {}
-        for (const channel in Username.Channels) {
-            channelPerms[Username.Channels[channel]] = { read: true, write: true }
+        for (const channelID in User.Channels) {
+            channelPerms[User.Channels[channelID]] = { read: true, write: true }
         }
-        const options = {
-            method: 'POST',
-            url: 'https://' + spaceDomain + '/api/chat/tokens',
-            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Basic ' + new Buffer.from(username + ':' + password).toString('base64') },
-            data: {
+        const response = await axios.post('https://' + spaceDomain + '/api/chat/tokens',
+            {
                 channels: channelPerms,
                 ttl: 43200,
-                member_id: Username.Username
-            },
-            json: true
-        };
+                member_id: User.Username
+            }, { auth });
 
-        const response = await axios(options)
         token = response.data.token
-        Username.Token = token
-        await Username.save()
+        User.Token = token
+        await User.save()
         return 200
     }
     catch (e) {
@@ -174,28 +184,30 @@ async function userUpdateToken(User) {
     }
 }
 
+// pulls data down to render the chat channel and video room
 const viewChannel = async (req, res) => {
-    const ChannelID = req.params.id;
-    const UserList = await channel.findOne({ ChannelID: ChannelID })
+    const channelID = req.params.id;
+    const UserList = await channelDB.findOne({ ChannelID: channelID })
     const User = req.user
-    success = await chViewChannel(ChannelID, User)
+    success = await chViewChannel(channelID, User)
     if (success) {
-        res.render('chat', { ChannelID: ChannelID, User: User, UserList: UserList })
+        res.render('chat', { ChannelID: channelID, User: User, UserList: UserList })
     }
     else res.sendStatus(404)
 
 }
 
-async function chViewChannel(ChannelID, User) {
-    const ch = await channel.findOne({ 'ChannelID': ChannelID })
-    if (ch === null) return false
-    if (!ch.Users.includes(User.Username)) return false
+//refs viewChannel, takes a string and User object
+async function chViewChannel(channelID, User) {
+    const channel = await channelDB.findOne({ 'ChannelID': channelID })
+    if (channel === null) return false
+    if (!channel.Users.includes(User.Username)) return false
 
     return true
 }
 
+// Creates a new token for users joining the audio channel
 const videoToken = async (req, res) => {
-    auth = { username: username, password: password }
     let user_name = req.user.Username
     const roomname = req.body.roomname
     let token = await axios.post(

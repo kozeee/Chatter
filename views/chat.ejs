@@ -78,6 +78,9 @@
                                             </a>
                                             <ul class="dropdown-menu">
                                                 <li><a class="dropdown-item" href="/users/<%=username%>">Profile</a>
+                                                <li><a class="dropdown-item"
+                                                        onclick="kickUser('<%=username%>','<%=ChannelID%>')">Kick
+                                                        User</a>
                                                 </li>
                                             </ul>
                                             <% }) %>
@@ -115,10 +118,22 @@
             </div>
             <!--MEMBERLIST END-->
 
-
+            <!--Add to channel start-->
         </div>
         <div class="row">
-
+            <div class="card d-flex justify-content-center">
+                <div class="col-sm-2">
+                    <div class="form-control">
+                        <form action="/channel/add" method="POST">
+                            <input class="input-group" required placeholder="Username" type="text" id="Username"
+                                name="Username"><br>
+                            <input type="text" name="channelID" hidden value="<%=ChannelID%>">
+                            <button type='submit' class="input-group btn btn-primary mt-2">Invite User</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!--Add to channel end-->
         </div>
 
 
@@ -249,5 +264,11 @@
         if (toggle) { await room.audioMute(); document.getElementById('selfMute').style.display = "none"; document.getElementById('selfUnMute').style.display = "block" }
         if (!toggle) { await room.audioUnmute(); document.getElementById('selfMute').style.display = "block"; document.getElementById('selfUnMute').style.display = "none" }
 
+    }
+
+    async function kickUser(Username, channelID) {
+        console.log(Username, channelID)
+        success = await axios.post('/channel/pop', { Username: Username, channelID: channelID })
+        if (success) location.reload()
     }
 </script>
