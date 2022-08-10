@@ -3,12 +3,11 @@ const axios = require('axios').default;
 const bcrypt = require('bcrypt')
 require("dotenv").config()
 mongoose.connect('mongodb://localhost/Chatter')
-const user = require('../models/Users')
-const ch = require('../models/Channels')
+const userDB = require('../models/Users')
+const channelDB = require('../models/Channels')
 
 const spaceDomain = process.env.SPACE_URL;
-const username = process.env.PROJECT_ID;
-const password = process.env.API_KEY
+auth = { username: process.env.PROJECT_ID, password: process.env.API_KEY }
 
 // Temp test view
 const view = (req, res) => {
@@ -25,15 +24,15 @@ const home = (req, res) => {
 const signUp = async (req, res) => {
     try {
         let token = await createToken(req.body.Username)
-        let channel = await ch.findOne({ ChannelID: 'Welcome' })
+        let Channel = await channelDB.findOne({ ChannelID: 'Welcome' })
 
         bcrypt.hash(req.body.Password, 10, function async(err, hash) {
-            user.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
+            userDB.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
 
         });
 
-        channel.Users.push(req.body.Username)
-        channel.save()
+        Channel.Users.push(req.body.Username)
+        Channel.save()
 
         res.redirect("/")
 
@@ -52,9 +51,9 @@ const signIn = async (req, res) => {
 const lookup = async (req, res) => {
     try {
         username = req.body.Username
-        const lookUp = user.findOne({ "Username": username })
-        if (lookUp === null) res.send(null)
-        res.send(lookup.Username, lookup.channels)
+        const User = userDB.findOne({ "Username": username })
+        if (User === null) res.send(null)
+        res.send(User.Username, User.Channels)
     }
     catch (e) {
         console.log(e)
@@ -70,18 +69,11 @@ const token = async (req, res) => {
 
 //Creates a fresh user token 
 async function createToken(Username) {
-    const options = {
-        method: 'POST',
-        url: 'https://' + spaceDomain + '/api/chat/tokens',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Basic ' + new Buffer.from(username + ':' + password).toString('base64') },
-        data: {
-            channels: { 'Welcome': { read: true, write: true } },
-            ttl: 43200,
-            member_id: Username
-        },
-        json: true
-    };
-    const response = await axios(options)
+    const response = await axios.post('https://' + spaceDomain + '/api/chat/tokens', {
+        channels: { 'Welcome': { read: true, write: true } },
+        ttl: 43200,
+        member_id: Username
+    }, { auth })
     return response.data.token
 }
 
