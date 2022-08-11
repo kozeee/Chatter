@@ -5,6 +5,7 @@ require("dotenv").config()
 mongoose.connect('mongodb://localhost/Chatter')
 const userDB = require('../models/Users')
 const channelDB = require('../models/Channels')
+const visitDB = require('../models/Visitors')
 
 const spaceDomain = process.env.SPACE_URL;
 auth = { username: process.env.PROJECT_ID, password: process.env.API_KEY }
@@ -25,16 +26,22 @@ const signUp = async (req, res) => {
     try {
         let token = await createToken(req.body.Username)
         let Channel = await channelDB.findOne({ ChannelID: 'Welcome' })
+        let VisitorID = req.body.visitorID
+        let Visitor = await visitDB.findOne({ VisitorID: VisitorID })
 
-        bcrypt.hash(req.body.Password, 10, function async(err, hash) {
-            userDB.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
+        if (Visitor === null) {
+            bcrypt.hash(req.body.Password, 10, function async(err, hash) {
+                userDB.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
+                visitDB.create({ VisitorID: VisitorID })
 
-        });
+            });
 
-        Channel.Users.push(req.body.Username)
-        Channel.save()
+            Channel.Users.push(req.body.Username)
+            Channel.save()
 
-        res.redirect("/")
+            res.send("All registered. Please sign in to continue.")
+        }
+        else { return res.send("You already have an account. Please try to sign in instead.") }
 
     }
     catch (e) {
