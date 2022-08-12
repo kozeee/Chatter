@@ -26,15 +26,18 @@ const signUp = async (req, res) => {
         let token = await createToken(req.body.Username)
         let Channel = await channelDB.findOne({ ChannelID: 'Welcome' })
 
-        bcrypt.hash(req.body.Password, 10, function async(err, hash) {
-            userDB.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
+        if (Visitor === null) {
+            bcrypt.hash(req.body.Password, 10, function async(err, hash) {
+                userDB.create({ Username: req.body.Username, Password: hash, Email: req.body.Email, Token: token })
 
-        });
+            });
 
-        Channel.Users.push(req.body.Username)
-        Channel.save()
+            Channel.Users.push(req.body.Username)
+            Channel.save()
 
-        res.redirect("/")
+            res.send("All registered. Please sign in to continue.")
+        }
+        else { return res.send("You already have an account. Please try to sign in instead.") }
 
     }
     catch (e) {
