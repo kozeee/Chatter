@@ -67,8 +67,6 @@
 									<label for="Email" class="">Email Address</label><br>
 									<input required type="text" class="form-control" id="Email" name="Email"
 										placeholder="Email Address">
-									<input required hidden type="text" class="form-control" id="visitorID"
-										name="visitorID">
 								</div>
 							</div>
 							<div class="row d-flex justify-content-center align-items-center">
@@ -164,21 +162,6 @@
 			// submit form if all conditions validate
 			return true;
 		}
-	</script>
-
-	<script>
-		// Initialize the agent at application startup.
-		const fpPromise = import('https://openfpcdn.io/fingerprintjs/v3')
-			.then(FingerprintJS => FingerprintJS.load())
-		// Get the visitor identifier when you need it.
-		fpPromise
-			.then(fp => fp.get())
-			.then(result => {
-				// This is the visitor identifier:
-				const visitorId = result.visitorId
-				const visitForm = document.getElementById('visitorID')
-				visitForm.value = visitorId
-			})
 	</script>
 
 </body>
